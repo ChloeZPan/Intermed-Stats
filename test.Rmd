@@ -1,0 +1,198 @@
+---
+title: "assignment1_zeyipan"
+author: "Zeyi Pan"
+date: "2/25/2020"
+output: 
+  pdf_document: 
+    latex_engine: xelatex
+---
+
+## Q1
+(a) Using standard matrix multiplication, the least squres estimates of regression coefficients $\beta$ is given by 
+\center $\hat{\beta} = (X^{T}X)^{-1}X^{T}y$ \center
+This will be the unique solution if $X^{T}X$ is invertible.
+
+(b) We can get
+\center $$X = \begin{bmatrix}1 \\
+⋮ & X_{i1} & X_{i2} & X_{i3}\\
+1 
+\end{bmatrix}_{n\times4}$$ \center
+Then
+\center $$X^{T}X = \begin{bmatrix}n & n_{1} & n_{2} & n_{3}\\
+n_{1} & n_{1} & 0 & 0\\
+n_{2} & 0 & n_{2} & 0\\
+n_{3} & 0 & 0 & n_{3}
+\end{bmatrix}_{4\times4}$$ \center
+ Compute the determinant of $X^{T}X$, we get
+ $detA = n_{1}^{2}n_{2}n_{3}+n_{1}n_{2}^{2}n_{3}+n_{1}n_{2}(nn_{3}-n_{3}^{2})$
+ Notice that
+ $n_{1}+n_{2}+n_{3}=n$
+ i) if $n_{k}\neq n\quad(k =  1, 2, 3)$, $detA \neq 0$. The matrix is invertible.
+ ii) if any $n_{k}= n\quad(k =  1, 2, 3)$, $detA = 0$. The matrix is not invertible.
+ 
+ (c) Deleting any of the four terms associated withh coefficients will resullt in deleting m row and m colomn of $X^{T}X$. No matter which term is deleted, if $n_{k}\neq n\quad(k =  1, 2, 3)$, $X^{T}X$ will always be a full rank matrix. Therefore, it will be invertible.
+
+(d) As we know, least square estimation is the orthongonal projection of vector y onto the column space of X. Therefore, if the column spaces of these four models are the same, the fitted values will be the same. 
+
+Their column spaces are the same. Specifically, the two matrix as below have the same column space. (1) They are both subspaces of $R^{n}$. (2) $e_{0}=e_{1}+e_{2}+e_{3}$ because only one of $X_{i1}, X_{i2},  X_{i3}$ is 1 and then they sum up to 1. This means their basis vector can be written as linear combination of the other.
+
+## Q2
+(a) 
+$\beta_{0}^{'}=-\frac{\beta_{0}}{\beta_{1}}$, $\beta_{1}^{'}=\frac{1}{\beta_{1}}$
+
+(b)
+The coefiicients of these two models do not conform to the equivalence relationship givrn in (a). To estimate parameters of linear regression, we need to minimize the sum of squared errors. As the response and explanatory variables are switched (assume Hwt is always x axis), one model minimizes the vertical distance from points to a line and the other minimize the horizontal distance from points to a line. Obviously, the parameters will be different.
+
+```{r}
+library(MASS)
+Hwt = cats$Hwt
+Bwt = cats$Bwt
+# fit models
+fit1 = lm(Hwt~Bwt)
+fit2 =  lm(Bwt~Hwt)
+#get coeficients
+beta0 = summary(fit1)$coefficients[1,1]
+beta1 = summary(fit1)$coefficients[2,1]
+beta0_q = summary(fit2)$coefficient[1,1]
+beta1_q = summary(fit2)$coefficients[2,1]
+#calculate according to (a)
+b0_q = -beta0/beta1
+b1_q = 1/beta1
+#scatter plot
+plot(Bwt, Hwt, xlab = "Bwt", ylab = "Hwt")
+abline(fit1)
+#calculate intercept and slope according to model2
+i = -beta0_q/beta1_q
+s = 1/beta1_q
+#fit a line of model2
+abline(a = i, b = s, col = "blue")
+```
+(c) There is no statistical evidence that model 2 or model 3 improves model 1 at 0.95 significant level. The 1 - p is 0.7875 when comparing model 2 with model 1 and 0.1337 when comparing model 3 with model 1.
+```{r}
+#get varible sex
+Sex = cats$Sex
+#fit models
+m1 = lm(Hwt~Bwt)
+m2 = lm(Hwt~Bwt+Sex)
+m3 = lm(Hwt~Bwt*Sex)
+#get efficient of m2
+m2_beta0 = summary(m2)$coefficients[1,1]
+m2_beta1 = summary(m2)$coefficients[2,1]
+m2_beta2 = summary(m2)$coefficients[3,1]
+#get efficient of m3
+m3_beta0 = summary(m3)$coefficients[1,1]
+m3_beta1 = summary(m3)$coefficients[2,1]
+m3_beta2 = summary(m3)$coefficients[3,1]
+m3_beta3 = summary(m3)$coefficients[4,1]
+
+#plot for model1
+plot(Bwt, Hwt, xlab = "Bwt", ylab = "Hwt")
+abline(m1)
+
+#plot for model2
+plot(Bwt, Hwt, xlab = "Bwt", ylab = "Hwt")
+##for male
+abline(a = m2_beta0+m2_beta2, b = m2_beta1, col = "blue")
+##for female
+abline(a = m2_beta0, b = m2_beta1, col = "red")
+#add legend
+legend("topright", legend=c("Male", "Female"),
+       col=c("blue", "red"), lty=c(1,1))
+
+#plot for model3
+plot(Bwt, Hwt, xlab = "Bwt", ylab = "Hwt")
+##for male
+abline(a = m3_beta0+m3_beta2, b = m3_beta1+m3_beta3, col = "blue")
+##for female
+abline(a = m3_beta0, b = m3_beta1, col = "red")
+#add legend
+legend("topright", legend=c("Male", "Female"),
+       col=c("blue", "red"), lty=c(1,1))
+
+#do F-test to compare model 2 to model 1
+#get rss
+m1_rss = sum(summary(m1)$residuals^2)
+m2_rss = sum(summary(m2)$residuals^2)
+m3_rss = sum(summary(m3)$residuals^2)
+
+#get degree of freedom n - p - 1
+df1 = summary(m1)$df[2]
+df2 = summary(m2)$df[2]
+df3 = summary(m3)$df[2]
+
+#calculate f statistics
+# model 1 and model 2
+F21 = (m1_rss-m2_rss)/(m2_rss/df2)  
+1 - pf(F21,1,df2)
+#anova(m1, m2)
+# model 1 and model 3
+F31 = ((m1_rss-m3_rss)/2)/(m3_rss/df3)  
+1 - pf(F31,2,df3)
+#anova(m1, m3)
+```
+
+## Q3
+(a)
+From residual plot, it is not randomly distributed. As Claims variable increases, the residual increases.
+
+From normal qq plot, the relationship between the sample percentiles and theoretical percentiles is not linear. The condition that the error terms are normally distributed is not met.
+```{r}
+#get variables
+Claims = Insurance$Claims
+District = Insurance$District
+Group = Insurance$Group
+Age = Insurance$Age
+Holders = Insurance$Holders
+#fit a model
+fit_q3 = lm(Claims ~ District + Group + Age + Holders)
+#residual plot
+plot(fit_q3$fitted.values, fit_q3$residuals, xlab = "fitted value", ylab = "residuals")
+#normal quantile plot
+qqnorm(fit_q3$residuals)
+qqline(fit_q3$residuals)
+```
+（b）Because Claims varible has many zeros as value and Log(0) is not defined, we need to add a in order to avoid this situation.
+
+When a = 10, it better normalized the residuals.
+```{r}
+#a = 1
+f_q31 = lm(log(Claims + 1) ~ District + Group + Age + Holders)
+#residual plot
+plot(f_q31$fitted.values, f_q31$residuals, xlab = "fitted value", ylab = "residuals")
+#normal quantile plot
+qqnorm(f_q31$residuals)
+qqline(f_q31$residuals)
+
+#a = 10
+f_q32 = lm(log(Claims + 10) ~ District + Group + Age + Holders)
+#residual plot
+plot(f_q32$fitted.values, f_q32$residuals, xlab = "fitted value", ylab = "residuals")
+#normal quantile plot
+qqnorm(f_q32$residuals)
+qqline(f_q32$residuals)
+```
+(c)
+There are $C_{4}^{4}+C_{4}^{3}+C_{4}^{2}+C_{4}^{1}+C_{4}^{0}=16$ models.
+
+(d)
+```{r}
+#install.packages('gtools')
+library(gtools)
+fit1 = lm(log(Claims+10) ~ .,data=Insurance)
+var_list = variable.names(fit1)
+p = permutations(n=4, r=4, v=var_list)
+models = list()
+for(i in range(4)){
+  vl = p[i,]
+  fit1 = lm(log(Claims+10) ~ .,data=Insurance)
+  model = formula(terms(fit1))
+  for(v in vl){
+    m = update(model, ~. -v)
+    model = m
+    
+    print(model)
+    append(models, model)
+  }
+}
+
+```
