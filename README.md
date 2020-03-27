@@ -1,5 +1,5 @@
 # Intermed-Stats
-CSC 465
+CSC 465 assignments using R
 
 ## Resources
 (1) Categorical variables and interaction terms in linear regression, Stratified regressions</br>
