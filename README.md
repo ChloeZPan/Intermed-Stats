@@ -1,6 +1,11 @@
 # Intermed-Stats
 CSC 465 assignments using R
 
+## Problem solved
+- Why cannot plot lda when CV = TRUE?</br>
+When using cross-validation, we have n models instend of one. Therefore, we don't have linear discriminant values or means anymore.</br>
+https://pages.mtu.edu/~shanem/psy5220/daily/Day12/classification.html
+
 ## Resources
 (1) Categorical variables and interaction terms in linear regression, Stratified regressions</br>
 https://www.andrew.cmu.edu/user/achoulde/94842/lectures/lecture10/lecture10-94842.html
