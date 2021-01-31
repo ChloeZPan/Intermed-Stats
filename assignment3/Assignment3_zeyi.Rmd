@@ -1,0 +1,166 @@
+---
+title: "Assignment3"
+author: "Zeyi Pan"
+date: "4/27/2020"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  pdf_document:
+    latex_engine: xelatex
+  html_document:
+    mathjax: local
+    df_print: paged
+    fontsiz: 12pt
+    toc: yes
+    toc_depth: 3
+    theme: cosmo
+  word_document:
+    toc: yes
+    toc_depth: '3'
+---
+
+## Q1
+The estinated model is $\tilde{Y}=\frac{1}{1+exp(-3.8938+0.1986X)}$.\newline
+$OR=e^{0.1986\times(15-5)}=7.2856$\newline
+$CI_{\beta}=\tilde{\beta}\pm2\times SE=0.1986\pm2\times 0.0915=[0.0157, 0.3815]$\newline
+$CI_{OR}=exp(CI_{\beta})=[1.0158, 1.4645]$\newline
+The odds ratio is 7.2856. The confidence interval is [1.0158, 1.4645].\newline
+```{r Q1}
+beta = 0.19859
+SE = 0.09147
+OR = exp(beta*(15-5))
+OR
+
+CI_beta.up = beta + 2*SE
+CI_beta.low = beta - 2*SE
+CI_OR.up = exp(CI_beta.up)
+CI_OR.low = exp(CI_beta.low)
+c(CI_OR.low, CI_OR.up)
+```
+
+## Q2
+# (a)
+```{r Q2_a}
+library(ISLR)
+hfit = hclust(dist(NCI60$data[,]), method="average")
+plot(hfit,labels=NCI60$labs, main='average')
+```
+
+# (b) 
+Maximum cophenestic distances between samples within a type are:\newline
+(1) MELANOMA: 88.9280\newline
+(2) RENAL: 95.9021\newline
+(3) COLON: 78.0307\newline
+
+Minimum cophenetic distances between a sample in a type and a sample not in this type:\newline
+(1) MELANOMA and RENAL: 79.5328\newline
+(2) MELANOMA and COLON: 93.4497\newline
+(3) RENAL and COLON: 93.4497\newline
+
+When the maximum cophenetic distance between samples within a type is smaller than the minimum cophenetic distance mentioned above, this type will cluster well and doesn't mix up with other types.\newline
+```{r Q2_b}
+m = which(NCI60$labs == "MELANOMA")
+m
+r = which(NCI60$labs == "RENAL")
+r
+c = which(NCI60$labs == "COLON")
+c
+position = c(m, r, c)
+data.new = NCI60$data[position,]
+labs.new = NCI60$labs[position]
+hfit.new = hclust(dist(data.new), method="average")
+cophenetic(hfit.new)
+plot(hfit.new,labels=labs.new, main='average')
+hfit.new$height
+```
+
+## Q3
+# (a)
+$K^*$ is 3.
+```{r Q3_a}
+library(MASS)
+mammals.log = log(mammals)
+r.square = rep(0,10)
+for (i in 1:10) {
+  fit = kmeans(mammals.log,centers=i, nstart=100)
+  r.square[i] = 1 - fit$tot.withinss/fit$totss
+}
+plot(r.square, xlab="K" ,type='b')
+k.star = which(r.square>=0.8)[1]
+k.star
+```
+
+# (b)
+It doesn't make sense to cluster like this. For some clusters, the body and brain weights are quite different within a cluster such as human and african elephant are in the same cluster. For some clusters, the weights of animals belong to different clusters are very close. For example, atlantic ground squirrels and ground squirrels are quite close to each other but are assigned into different clusters.\newline
+```{r Q3_b1}
+fit.star = kmeans(mammals.log,centers=k.star, nstart=100)
+mammals.new = cbind(mammals.log, fit.star$cluster)
+plot(mammals.new[,1:2], col=mammals.new[,3], pch=4, cex=0.7)
+points(fit.star$centers, col="blue", pch=15, cex=1.5)
+```
+```{r Q3_b2}
+row.names(mammals)[which(fit.star$cluster==1)]
+row.names(mammals)[which(fit.star$cluster==2)]
+row.names(mammals)[which(fit.star$cluster==3)]
+plot(mammals.new[,1:2], col=mammals.new[,3], cex=1)
+text(mammals.new[,1:2], labels=row.names(mammals), cex= 0.7)
+```
+
+## Q4
+# (a)
+```{r Q4_a1}
+library(ISLR)
+library(class)
+library(stats)
+x = rbind(Khan$xtrain,Khan$xtest)
+y = c(Khan$ytrain,Khan$ytest)
+dim(x)
+length(y)
+```
+```{r Q4_a2}
+prc = prcomp(x[,1:2308], center = TRUE, scale. = FALSE)
+```
+
+# (b)
+The second classifier is better. (1) Smaller CE. (2) Curse of dimensionality. In KNN, the more dimensions we add, the larger the volume in the hyperspace needs to be to capture fixed number of neighbors. As the volume grows larger and larger, the “neighbors” become less and less “similar” to the query point as they are now all relatively distant from the query point considering all different dimensions that are included when computing the pairwise distances. (3) Time comlexity. The brute force KNN has $O(n\times m)$. When the number of samples $n$ is much larger than the number of features $m$, its time complexity will be $O(n)$. (3) The 10 principal components take 64.76% proportion of variance which means 10 principal components are representative to some extend.
+```{r q4_B}
+# a
+fa = function(confusion.table){
+  CE = 1-sum(diag(confusion.table))/sum(confusion.table)
+  return(CE)
+}
+
+knn.function = function(k.list, train, gr) {
+  pr.table = matrix(NA,length(k.list),1)
+  colnames(pr.table) = "CE"
+  for (i in 1:length(k.list)) {
+    knn.fit = knn.cv(train,gr,k=k.list[i],use.all=T) 
+    c_table = table(knn.fit,gr)
+    pr.table[i,] = fa(c_table)
+  }
+  return(pr.table) 
+}
+
+k.list = seq(1,50,1)
+result1 = knn.function(k.list, x, y)
+min(result1)
+# plot CE vs K
+plot(k.list,result1[,1],main="ALL" ,type="b",xlab="K",ylab="CE")
+
+# b
+prc10 = prcomp(x[,1:2308], center = TRUE, scale. = FALSE, rank=10)
+summary(prc10)
+x.new = prc10$x
+result2 = knn.function(k.list, x.new, y)
+min(result2)
+# plot CE vs K
+plot(k.list,result2[,1],main="PC10", type="b",xlab="K",ylab="CE")
+```
+
+## Q5
+
+K means clusters data based on distances which are sensitive to measuring unit. The features with high magnitude will give high weight to the distance and the algorithm will be biased. Specifically, K-means requires us to find a solution to maximaze $R^2=1-\frac{SS_{within}}{SS_{total}}$. To calculate $SS_{within}$ and $SS_{total}$, we need to calculate $d(x, g(A))^2$. For example, if we use Euclidean distance and we have two features. We calculate distance between point (1000, 0.1) to (990, 0.2). It is obvious that the first feature dominates the distance change as it has higher magnitude.\newline
+
+LDA is not affected. LDA finds a set of discriminant axes by computing eigenvectors of $W^{-1}B$, where $W$ and $B$ are within- and between-class scatter matrices. Specifically, it is to find $v$ and $\lambda$ in $Bv=\lambda Wv$. Suppose we do scaling with a diagnal matrix $A$. $Bv=\lambda Wv$ is quivalent to t$ABAA^{-1}v=\lambda AWAA^{-1}v$. And the equation will become $B_{new}A^{-1}v=\lambda W_{new}A^{-1}v$ and $A^{-1}v$ is the new eigenvector. However, the eigenvalue $\lambda$ stay unchanged. This means the classification will not change.\newline
+
+
