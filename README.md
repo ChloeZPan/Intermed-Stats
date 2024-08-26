@@ -3,7 +3,7 @@ CSC 465 assignments using R
 
 ## Problem solved
 - Why cannot plot lda when CV = TRUE?</br>
-When using cross-validation, we have n models instend of one. Therefore, we don't have linear discriminant values or means anymore.</br>
+When using cross-validation, we have n models instead of one. Therefore, we don't have linear discriminant values or means anymore.</br>
 https://pages.mtu.edu/~shanem/psy5220/daily/Day12/classification.html
 
 ## Resources
